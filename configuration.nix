@@ -12,15 +12,16 @@ in {
   imports =
     [ # Include the results of the hardware scan.
       ./hardware-configuration.nix
+      ./cachix.nix
     ];
 
-  boot.initrd.luks.devices = [
+  boot.initrd.luks.devices = 
    {
-      name = "root";
-      device = "/dev/nvme0n1p2";
-      preLVM = true;
-   }
-  ];
+      root = {
+         device = "/dev/nvme0n1p2";
+         preLVM = true;
+      };
+   };
 
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
@@ -42,9 +43,9 @@ in {
   hardware.bluetooth.enable = true;
 
   # Select internationalisation properties.
+  console.font = "Lat2-Terminus16";
+  console.keyMap = "dvorak";
   i18n = {
-     consoleFont = "Lat2-Terminus16";
-     consoleKeyMap = "dvorak";
      defaultLocale = "en_US.UTF-8";
   };
   nixpkgs.config.allowUnfree = true;
@@ -121,10 +122,13 @@ in {
   hardware.pulseaudio.package = pkgs.pulseaudioFull;
   hardware.pulseaudio.extraModules = [ pkgs.pulseaudio-modules-bt ]; 
   
-  hardware.bluetooth.extraConfig = "
-    [General]
-    Enable=Source,Sink,Media,Socket
-  ";
+  hardware.bluetooth= {
+    config = {
+     General = {
+       Enable = "Source,Sink,Media,Socket";
+     };
+    };
+  };
 
   # Enable the X11 windowing system.
   services.xserver = {
