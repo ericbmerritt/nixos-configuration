@@ -4,6 +4,7 @@
 
 { config, pkgs, options,... }:
 let
+  all-hies = import (fetchTarball "https://github.com/infinisil/all-hies/tarball/master") {};
   talpkgs = (builtins.fetchGit {
     url = "ssh://git@gitlab.com/talendant/talpkgs.git";
     ref = "v0.0.0-build.10.c82edc1";
@@ -91,7 +92,8 @@ in {
      nix-prefetch-git
      cabal-install
      haskellPackages.hpack
-  ];
+     (all-hies.selection { selector = p: { inherit (p) ghc865 ghc864; }; })
+ ];
 
   # enable keybase
   services.keybase.enable = true;
