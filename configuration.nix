@@ -44,9 +44,9 @@ in {
   hardware.bluetooth.enable = true;
 
   # Select internationalisation properties.
-  console.font = "Lat2-Terminus16";
-  console.keyMap = "dvorak";
   i18n = {
+     consoleFont = "Lat2-Terminus16";
+     consoleKeyMap = "dvorak";
      defaultLocale = "en_US.UTF-8";
   };
   nixpkgs.config.allowUnfree = true;
@@ -123,15 +123,12 @@ in {
   hardware.pulseaudio.enable = true;
   hardware.pulseaudio.package = pkgs.pulseaudioFull;
   hardware.pulseaudio.extraModules = [ pkgs.pulseaudio-modules-bt ]; 
-  
-  hardware.bluetooth= {
-    config = {
-     General = {
-       Enable = "Source,Sink,Media,Socket";
-     };
-    };
-  };
 
+  hardware.bluetooth.extraConfig = "
+    [General]
+    Enable=Source,Sink,Media,Socket
+  ";
+  
   # Enable the X11 windowing system.
   services.xserver = {
     enable = true;
