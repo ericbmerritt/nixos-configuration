@@ -2,8 +2,7 @@
 # your system.  Help is available in the configuration.nix(5) man page
 # and in the NixOS manual (accessible by running ‘nixos-help’).
 
-{ config, pkgs, options, ... }:
- {
+{ config, pkgs, options, ... }: {
   imports = [ # Include the results of the hardware scan.
     ./hardware-configuration.nix
     ./cachix.nix
@@ -37,11 +36,11 @@
   hardware.bluetooth.enable = true;
 
   # Select internationalisation properties.
-  i18n = {
-    consoleFont = "Lat2-Terminus16";
-    consoleKeyMap = "dvorak";
-    defaultLocale = "en_US.UTF-8";
+  console = {
+    font = "Lat2-Terminus16";
+    keyMap = "dvorak";
   };
+  i18n = { defaultLocale = "en_US.UTF-8"; };
   nixpkgs.config.allowUnfree = true;
 
   virtualisation.docker.enable = true;
@@ -58,8 +57,6 @@
     gnupg
     keybase
     keybase-gui
-    zsh
-    zsh-prezto
     vscode
   ];
 
@@ -97,8 +94,9 @@
   hardware.pulseaudio.package = pkgs.pulseaudioFull;
   hardware.pulseaudio.extraModules = [ pkgs.pulseaudio-modules-bt ];
 
-  hardware.bluetooth.extraConfig =
-    "\n    [General]\n    Enable=Source,Sink,Media,Socket\n  ";
+  hardware.bluetooth.config = {
+    General = { Enable = "Source,Sink,Media,Socket"; };
+  };
 
   # Enable the X11 windowing system.
   services.xserver = {
@@ -124,39 +122,73 @@
   };
 
   home-manager.users.eric = { pkgs, ... }: {
-    home.packages = [ pkgs.emacs 
-                      pkgs.neovim 
-		      pkgs.firefox
-		      pkgs.google-chrome
-		    ];
-    programs.zsh.enable = true;
+      home.packages = [
+        pkgs.cachix
+        pkgs.xclip
+        pkgs.killall
+        pkgs.tmux
+        pkgs.emacs
+        pkgs.neovim
+        pkgs.firefox
+        pkgs.google-chrome
+        pkgs.gnome3.gnome-tweaks
+      ];
+      nixpkgs.config.allowUnfree = true;
+      programs.zsh = {
+        enable = true;
+        oh-my-zsh = {
+          enable = true;
+          theme = "bira";
+        };
+        sessionVariables = { EDITOR = "${pkgs.neovim}/bin/nvim"; };
+      };
 
-    programs.command-not-found.enable = true;
+      programs.command-not-found.enable = true;
 
-    programs.git = {
-      package = pkgs.gitAndTools.gitFull;
-      enable = true;
-      userName = "Eric B. Merritt";
-      userEmail = "eric@merritt.tech";
-    };
+      programs.git = {
+        package = pkgs.gitAndTools.gitFull;
+        enable = true;
+        userName = "Eric B. Merritt";
+        userEmail = "eric@merritt.tech";
+      };
 
-    programs.fzf = {
-      enable = true;
-      enableBashIntegration = true;
-      defaultCommand = "${pkgs.ripgrep}/bin/rg --files";
-    };
+      programs.fzf = {
+        enable = true;
+        enableBashIntegration = true;
+        defaultCommand =
+          "${pkgs.fd}/bin/fd --type f --hidden --follow --exclude .git";
+      };
 
-    home.file = {
-      ".tmux.conf" = {
-        text = ''
-          set -g mouse on
-          set -g focus-events on
-        '';
+      home.file = {
+        ".tmux.conf" = {
+          text = ''
+            set -g focus-events on
+
+            # Linux only
+            set -g mouse on
+            bind -n WheelUpPane if-shell -F -t = "#{mouse_any_flag}" "send-keys -M" "if -Ft= '#{pane_in_mode}' 'send-keys -M' 'select-pane -t=; copy-mode -e; send-keys -M'"
+            bind -n WheelDownPane select-pane -t= \; send-keys -M
+            bind -n C-WheelUpPane select-pane -t= \; copy-mode -e \; send-keys -M
+            bind -T copy-mode-vi    C-WheelUpPane   send-keys -X halfpage-up
+            bind -T copy-mode-vi    C-WheelDownPane send-keys -X halfpage-down
+            bind -T copy-mode-emacs C-WheelUpPane   send-keys -X halfpage-up
+            bind -T copy-mode-emacs C-WheelDownPane send-keys -X halfpage-down
+
+            # To copy, left click and drag to highlight text in yellow, 
+            # once you release left click yellow text will disappear and will automatically be available in clibboard
+            # # Use vim keybindings in copy mode
+            setw -g mode-keys vi
+
+            # Update default binding of `Enter` to also use copy-pipe
+            unbind -T copy-mode-vi Enter
+            bind-key -T copy-mode-vi Enter send-keys -X copy-pipe-and-cancel "xclip -selection c"
+            bind-key -T copy-mode-vi MouseDragEnd1Pane send-keys -X copy-pipe-and-cancel "xclip -in -selection clipboard"i
+          '';
+        };
+
       };
 
     };
-
-  };
 
   # This value determines the NixOS release with which your system is to be
   # compatible, in order to avoid breaking some software such as database
