@@ -19,6 +19,14 @@
   # Use the systemd-boot EFI boot loader.
   boot.loader.systemd-boot.enable = true;
   boot.loader.efi.canTouchEfiVariables = true;
+
+  boot.extraModprobeConfig = ''
+    options iwlwifi 11n_disable=1
+    options iwlwifi swcrypto=1
+    options iwlwifi 11n_disable=8
+    options iwlwifi bt_coex_active=0
+  '';
+
   services.throttled.enable = true;
 
   networking.hostName = "benedict"; # Define your hostname.
